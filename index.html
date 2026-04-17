@@ -56,7 +56,7 @@
       <span class="sync-dot" id="sync-dot"></span>
     </span>
     <span class="header-count" id="header-count" style="display:none">
-      <span id="count-num">0</span> en inbox
+      <span id="count-num">0</span>&nbsp;en inbox
     </span>
   </div>
 
@@ -322,6 +322,23 @@
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-notion')">Cancelar</button>
       <button class="modal-confirm" onclick="confirmNotion()">Crear página</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal-sheet">
+    <div class="modal-title">Editar nota</div>
+    <textarea
+      class="modal-input"
+      id="edit-input"
+      rows="6"
+      style="resize:none; min-height:130px; font-size:16px; font-weight:300; line-height:1.6; caret-color:var(--accent);"
+    ></textarea>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="modal-cancel" onclick="closeModal('modal-edit')">Cancelar</button>
+      <button class="modal-confirm" onclick="confirmEdit()">Guardar</button>
     </div>
   </div>
 </div>

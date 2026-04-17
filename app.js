@@ -22,6 +22,7 @@ const DATA_REF = doc(db, 'data', 'main');
 
 let notes = [], history = [], trash = [], settings = {};
 let activeNoteId = null;
+let activeEditId  = null;
 
 // ── SYNC ──
 function showSyncStatus(ok) {
@@ -51,8 +52,13 @@ function startSync() {
     const d = snap.data();
     applyRemoteData(d);
     renderReview(); renderHistory(); renderTrash(); updateBadge();
+    // Actualizar estado Firebase en Ajustes
+    const fbTxt = document.getElementById('firebase-status-text');
+    if (fbTxt) fbTxt.textContent = 'Conectado ✓';
     showSyncStatus(true);
   }, err => {
+    const fbTxt = document.getElementById('firebase-status-text');
+    if (fbTxt) fbTxt.textContent = 'Error de conexión';
     console.error('Firestore listener error:', err);
     showToast('Error de sincronización', 'error');
   });
@@ -197,11 +203,13 @@ function card(n, mode) {
   const COPY_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
   let actions = '', confirm = '';
 
+  const EDIT_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
   if (mode === 'inbox') {
     actions = `
       <button class="action-btn todoist" onclick="openTodoist('${n.id}')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.2 0H2.8C1.3 0 0 1.3 0 2.8v18.4C0 22.7 1.3 24 2.8 24h18.4c1.5 0 2.8-1.3 2.8-2.8V2.8C24 1.3 22.7 0 21.2 0zM10 17.2l-5-5 1.4-1.4 3.6 3.6 7.6-7.6 1.4 1.4L10 17.2z"/></svg>Todoist</button>
       <button class="action-btn notion" onclick="openNotion('${n.id}')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/></svg>Notion</button>
       <button class="action-btn keep" onclick="sendToKeep('${n.id}')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3h6l1 9H8L9 3zM4.5 14h15l-1.68 6.39A2 2 0 0116 22H8a2 2 0 01-1.93-1.61L4.5 14z"/></svg>Keep</button>
+      <button class="action-btn edit" onclick="openEdit('${n.id}')" title="Editar">${EDIT_SVG}</button>
       <button class="action-btn copy" onclick="copyNote('${n.id}','inbox')" title="Copiar">${COPY_SVG}</button>
       <button class="action-btn dismiss" id="dismiss-${n.id}" onclick="askDismiss('${n.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
     confirm = `<div class="dismiss-confirm" id="confirm-${n.id}"><span class="dismiss-confirm-text">¿Mover a papelera?</span><div class="dismiss-confirm-btns"><button class="dismiss-no" onclick="cancelDismiss('${n.id}')">No</button><button class="dismiss-yes" onclick="trashNote('${n.id}')">Sí, eliminar</button></div></div>`;
@@ -396,6 +404,30 @@ function removeInbox(id) {
   renderReview();
   updateBadge();
 }
+
+// ── EDIT ──
+window.openEdit = id => {
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  activeEditId = id;
+  document.getElementById('edit-input').value = note.text;
+  document.getElementById('modal-edit').classList.add('show');
+  setTimeout(() => document.getElementById('edit-input').focus(), 100);
+};
+
+window.confirmEdit = async () => {
+  const text = document.getElementById('edit-input').value.trim();
+  if (!text) return;
+  const note = notes.find(n => n.id === activeEditId);
+  if (!note) return;
+  note.text = text;
+  note.edited = new Date().toISOString();
+  document.getElementById('modal-edit').classList.remove('show');
+  activeEditId = null;
+  renderReview();
+  showToast('✓ Nota editada', 'success');
+  await persistAll();
+};
 
 // ── MODALS ──
 window.closeModal = id => { document.getElementById(id).classList.remove('show'); activeNoteId = null; };
