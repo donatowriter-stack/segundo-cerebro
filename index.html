@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#041014">
+  <title>Segundo Cerebro</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ── BACKGROUND ── -->
+<div class="bg"></div>
+
+<!-- ── PIN SCREEN ── -->
+<div id="pin-screen">
+  <div class="pin-logo">🧠</div>
+  <div class="pin-title" id="pin-title">Segundo Cerebro</div>
+  <div class="pin-subtitle" id="pin-subtitle">Ingresá tu PIN</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="dot-0"></div>
+    <div class="pin-dot" id="dot-1"></div>
+    <div class="pin-dot" id="dot-2"></div>
+    <div class="pin-dot" id="dot-3"></div>
+  </div>
+  <div class="pin-grid">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <button class="pin-key empty"></button>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key" onclick="pinBackspace()">⌫</button>
+  </div>
+  <div class="pin-error-msg" id="pin-error">PIN incorrecto. Intentá de nuevo.</div>
+  <div class="pin-setup-hint" id="pin-setup-hint" style="display:none">
+    Primera vez: elegí un PIN de 4 dígitos.<br>Se guardará en este dispositivo.
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <span class="header-title">
+      Segundo Cerebro
+      <span class="sync-dot" id="sync-dot"></span>
+    </span>
+    <span class="header-count" id="header-count" style="display:none">
+      <span id="count-num">0</span> en inbox
+    </span>
+  </div>
+
+  <!-- Capture Screen -->
+  <div class="screen active" id="screen-capture">
+    <div class="capture-area">
+      <p class="capture-hint">¿Qué tenés en mente?<br><strong>Escribí, guardá, seguí.</strong></p>
+      <div class="capture-box">
+        <textarea
+          id="capture-input"
+          placeholder="Idea, tarea, referencia..."
+          rows="4"
+          autocomplete="off"
+          autocorrect="on"
+          spellcheck="true"
+        ></textarea>
+        <div class="capture-footer">
+          <span class="char-count" id="char-count">0</span>
+          <button class="btn-save" id="btn-save" disabled onclick="saveNote()">Guardar</button>
+        </div>
+      </div>
+    </div>
+    <div class="capture-bottom">
+      <div class="install-hint" id="install-hint">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L12 16M12 2L8 6M12 2L16 6"/>
+          <rect x="3" y="14" width="18" height="8" rx="2"/>
+        </svg>
+        <span>Instalá: tocá <strong>Compartir → Agregar a inicio</strong> en iOS, o el ícono de instalar en Chrome Android.</span>
+        <button class="install-hint-close" onclick="document.getElementById('install-hint').remove()">×</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Screen -->
+  <div class="screen" id="screen-review">
+    <div class="scroll-list" id="review-list"></div>
+  </div>
+
+  <!-- History Screen -->
+  <div class="screen" id="screen-history">
+    <div class="scroll-list" id="history-list"></div>
+  </div>
+
+  <!-- Trash Screen -->
+  <div class="screen" id="screen-trash">
+    <div class="scroll-list" id="trash-list"></div>
+  </div>
+
+  <!-- Settings Screen -->
+  <div class="screen" id="screen-settings">
+    <div class="settings-body">
+
+      <!-- Firebase -->
+      <div class="settings-section">
+        <div class="settings-label">Sincronización</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon" style="background:rgba(45,212,191,0.2);">☁️</div>
+            <div class="settings-row-content">
+              <div class="settings-row-title">Firebase</div>
+              <div class="settings-row-subtitle" id="firebase-status-text">Conectando...</div>
+            </div>
+            <span class="sync-dot" id="sync-dot-settings"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Todoist -->
+      <div class="settings-section">
+        <div class="settings-label">Todoist</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon todoist">✓</div>
+            <div class="settings-row-content">
+              <div class="settings-row-title">API Token</div>
+              <div class="settings-row-subtitle">Configuración → Integraciones → API</div>
+              <input class="settings-input" type="password" id="todoist-token" placeholder="tu_token_de_todoist" oninput="saveSettings()">
+              <div class="settings-status" id="todoist-status"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-content" style="padding-left:44px">
+              <div class="settings-row-subtitle">Proyecto destino (ID)</div>
+              <input class="settings-input" type="text" id="todoist-project" placeholder="Dejar vacío = Inbox por defecto" oninput="saveSettings()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notion -->
+      <div class="settings-section">
+        <div class="settings-label">Notion</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon notion">N</div>
+            <div class="settings-row-content">
+              <div class="settings-row-title">API Token</div>
+              <div class="settings-row-subtitle">notion.so/my-integrations → Nueva integración</div>
+              <input class="settings-input" type="password" id="notion-token" placeholder="secret_..." oninput="saveSettings()">
+              <div class="settings-status" id="notion-status"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-content" style="padding-left:44px">
+              <div class="settings-row-subtitle">ID de la base de datos</div>
+              <input class="settings-input" type="text" id="notion-db" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" oninput="saveSettings()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Google Keep -->
+      <div class="settings-section">
+        <div class="settings-label">Google Keep</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon keep">📌</div>
+            <div class="settings-row-content">
+              <div class="settings-row-title">Sin API oficial</div>
+              <div class="settings-row-subtitle">Al derivar a Keep, el texto se copia al portapapeles y se abre Keep automáticamente.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="testConnections()">Verificar conexiones</button>
+
+      <!-- Export -->
+      <div class="settings-section">
+        <div class="settings-label">Exportar</div>
+        <div class="settings-card">
+          <div class="settings-row" onclick="exportXLSX()" style="cursor:pointer">
+            <div class="settings-row-icon" style="background:rgba(52,211,153,0.2);">📊</div>
+            <div class="settings-row-content">
+              <div class="settings-row-title">Descargar .xlsx</div>
+              <div class="settings-row-subtitle">Exporta inbox, historial y papelera a Excel</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="settings-section">
+        <div class="settings-label">Peligro</div>
+        <div class="settings-card">
+          <div class="settings-row" onclick="clearAllNotes()" style="cursor:pointer">
+            <div class="settings-row-content">
+              <div class="settings-row-title" style="color:var(--danger)">Vaciar inbox</div>
+              <div class="settings-row-subtitle">Mueve todas las notas a la papelera</div>
+            </div>
+          </div>
+          <div class="settings-row" onclick="emptyTrash()" style="cursor:pointer">
+            <div class="settings-row-content">
+              <div class="settings-row-title" style="color:var(--danger)">Vaciar papelera</div>
+              <div class="settings-row-subtitle">Elimina permanentemente todas las notas en la papelera</div>
+            </div>
+          </div>
+          <div class="settings-row" onclick="changePIN()" style="cursor:pointer">
+            <div class="settings-row-content">
+              <div class="settings-row-title">Cambiar PIN</div>
+              <div class="settings-row-subtitle">Configurar un nuevo PIN de acceso</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:20px"></div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab active" id="tab-capture" onclick="switchTab('capture')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      <span class="tab-label">Capturar</span>
+    </button>
+
+    <button class="tab" id="tab-review" onclick="switchTab('review')" style="position:relative">
+      <div class="tab-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+        <span class="badge" id="review-badge" style="display:none">0</span>
+      </div>
+      <span class="tab-label">Revisar</span>
+    </button>
+
+    <button class="tab" id="tab-history" onclick="switchTab('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4.5"/><polyline points="3 3 3 9 9 9"/>
+      </svg>
+      <span class="tab-label">Historial</span>
+    </button>
+
+    <button class="tab" id="tab-trash" onclick="switchTab('trash')" style="position:relative">
+      <div class="tab-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+        </svg>
+        <span class="badge" id="trash-badge" style="display:none;background:var(--danger);color:#fff">0</span>
+      </div>
+      <span class="tab-label">Papelera</span>
+    </button>
+
+    <button class="tab" id="tab-settings" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+      <span class="tab-label">Ajustes</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- ── MODALS ── -->
+
+<!-- Todoist Modal -->
+<div class="modal-overlay" id="modal-todoist">
+  <div class="modal-sheet">
+    <div class="modal-title">Enviar a Todoist</div>
+    <div class="modal-note-preview" id="todoist-preview"></div>
+    <div class="modal-field">
+      <label>Fecha límite (opcional)</label>
+      <input class="modal-input" type="text" id="todoist-due" placeholder="hoy, mañana, 2025-05-10...">
+    </div>
+    <div class="modal-field">
+      <label>Prioridad</label>
+      <select class="modal-input" id="todoist-priority" style="cursor:pointer">
+        <option value="4">Sin prioridad</option>
+        <option value="3">P3 – Baja</option>
+        <option value="2">P2 – Media</option>
+        <option value="1">P1 – Alta</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('modal-todoist')">Cancelar</button>
+      <button class="modal-confirm todoist" onclick="confirmTodoist()">Crear tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notion Modal -->
+<div class="modal-overlay" id="modal-notion">
+  <div class="modal-sheet">
+    <div class="modal-title">Enviar a Notion</div>
+    <div class="modal-note-preview" id="notion-preview"></div>
+    <div class="modal-field">
+      <label>Tipo de entrada</label>
+      <select class="modal-input" id="notion-type" style="cursor:pointer">
+        <option value="Idea">💡 Idea</option>
+        <option value="Referencia">📎 Referencia</option>
+        <option value="Proyecto">🗂 Proyecto</option>
+        <option value="Nota">📝 Nota</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('modal-notion')">Cancelar</button>
+      <button class="modal-confirm" onclick="confirmNotion()">Crear página</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<!-- ── SCRIPTS ── -->
+<script type="module" src="app.js"></script>
+
+</body>
+</html>

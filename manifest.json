@@ -1,0 +1,24 @@
+{
+  "name": "Segundo Cerebro",
+  "short_name": "Cerebro",
+  "description": "Inbox de captura rápida con derivación a Todoist, Notion y Keep",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080818",
+  "theme_color": "#0a0a1a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%230d0d2e'/><circle cx='96' cy='80' r='32' fill='none' stroke='%235e9bff' stroke-width='6'/><line x1='96' y1='48' x2='96' y2='112' stroke='%235e9bff' stroke-width='6'/><path d='M80 112 Q96 140 112 112' fill='%235e9bff'/><line x1='72' y1='128' x2='120' y2='128' stroke='%23a78bfa' stroke-width='4' stroke-linecap='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%230d0d2e'/><circle cx='256' cy='210' r='86' fill='none' stroke='%235e9bff' stroke-width='16'/><line x1='256' y1='124' x2='256' y2='296' stroke='%235e9bff' stroke-width='16'/><path d='M210 296 Q256 370 302 296' fill='%235e9bff'/><line x1='190' y1='340' x2='322' y2='340' stroke='%23a78bfa' stroke-width='12' stroke-linecap='round'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "es"
+}
