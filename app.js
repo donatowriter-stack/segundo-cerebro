@@ -24,15 +24,48 @@ let notes = [], history = [], trash = [], settings = {};
 let activeNoteId = null;
 let activeEditId  = null;
 
+// ── LOCAL STORAGE (offline-first) ──
+const LOCAL_KEY = 'sc_local';
+
+function saveLocal() {
+  try {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify({ notes, history, trash, settings }));
+  } catch(e) {}
+}
+
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    const parse = v => Array.isArray(v) ? v : [];
+    notes   = parse(d.notes);
+    history = parse(d.history);
+    trash   = parse(d.trash);
+    if (d.settings && typeof d.settings === 'object') {
+      settings = d.settings;
+      loadSettingsUI();
+    }
+    renderReview(); renderHistory(); renderTrash(); updateBadge();
+    return true;
+  } catch(e) { return false; }
+}
+
 // ── SYNC ──
 function showSyncStatus(ok) {
   const el = document.getElementById('sync-indicator');
   if (!el) return;
-  el.textContent = ok ? '↕ Sincronizado' : '⚠ Error de sync';
+  el.textContent = ok ? '⇕ Sincronizado' : '⚠ Error de sync';
   el.style.borderColor = ok ? 'rgba(45,212,191,0.4)' : 'rgba(255,107,107,0.4)';
   el.classList.add('show');
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function showOfflineBanner(offline) {
+  let banner = document.getElementById('offline-banner');
+  if (!banner) return;
+  banner.style.display = offline ? 'flex' : 'none';
 }
 
 function applyRemoteData(d) {
@@ -47,30 +80,50 @@ function applyRemoteData(d) {
 }
 
 function startSync() {
-  onSnapshot(DATA_REF, snap => {
+  // Mostrar datos locales inmediatamente mientras Firebase conecta
+  loadLocal();
+
+  onSnapshot(DATA_REF, async snap => {
     if (!snap.exists()) return;
     const d = snap.data();
+
+    // Detectar notas añadidas offline que no están en Firebase
+    const parse = v => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : []);
+    const remoteIds = new Set(parse(d.notes).map(n => n.id));
+    const offlineNotes = notes.filter(n => !remoteIds.has(n.id));
+
     applyRemoteData(d);
     renderReview(); renderHistory(); renderTrash(); updateBadge();
-    // Actualizar estado Firebase en Ajustes
+
+    // Si había notas offline, fusionarlas y subir a Firebase
+    if (offlineNotes.length > 0) {
+      notes = [...offlineNotes, ...notes];
+      saveLocal();
+      await setDoc(DATA_REF, { notes, history, trash, settings }).catch(() => {});
+      renderReview(); updateBadge();
+      showToast(`↑ ${offlineNotes.length} nota(s) offline sincronizada(s)`, 'success');
+    }
+
     const fbTxt = document.getElementById('firebase-status-text');
     if (fbTxt) fbTxt.textContent = 'Conectado ✓';
     showSyncStatus(true);
+    showOfflineBanner(false);
   }, err => {
     const fbTxt = document.getElementById('firebase-status-text');
     if (fbTxt) fbTxt.textContent = 'Error de conexión';
     console.error('Firestore listener error:', err);
-    showToast('Error de sincronización', 'error');
+    showOfflineBanner(true);
   });
 }
 
 async function persistAll() {
   updateBadge();
+  saveLocal(); // Guardar localmente siempre (funciona offline)
+  if (!navigator.onLine) return; // Si no hay internet, no intentar Firebase
   try {
     await setDoc(DATA_REF, { notes, history, trash, settings });
   } catch (e) {
     console.error('persistAll error:', e);
-    showToast('Error al guardar: ' + e.message, 'error');
   }
 }
 
@@ -577,6 +630,20 @@ function fmt(iso) {
 function esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '<br>');
 }
+
+// ── ONLINE / OFFLINE ──
+window.addEventListener('offline', () => {
+  showOfflineBanner(true);
+  showToast('№ Sin conexión — las notas se guardan localmente', 'error');
+});
+
+window.addEventListener('online', async () => {
+  showOfflineBanner(false);
+  showToast('🔄 Conexión restaurada — sincronizando...', 'success');
+  try {
+    await setDoc(DATA_REF, { notes, history, trash, settings });
+  } catch(e) {}
+});
 
 // ── SERVICE WORKER ──
 if ('serviceWorker' in navigator) {

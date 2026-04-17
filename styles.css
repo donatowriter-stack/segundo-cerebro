@@ -452,3 +452,15 @@ html, body {
 
 /* ── KEYFRAMES ── */
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── OFFLINE BANNER ── */
+#offline-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+  background: rgba(251,188,4,0.15);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(251,188,4,0.35);
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 500; color: #fcd34d;
+  gap: 8px; letter-spacing: 0.1px;
+}
