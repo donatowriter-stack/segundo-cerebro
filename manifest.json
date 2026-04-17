@@ -1,6 +1,6 @@
 {
   "name": "Segundo Cerebro",
-  "short_name": "Cerebro",
+  "short_name": "Segundo Cerebro",
   "description": "Inbox de captura rápida con derivación a Todoist, Notion y Keep",
   "start_url": "/segundo-cerebro/",
   "scope": "/segundo-cerebro/",
