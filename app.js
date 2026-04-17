@@ -75,10 +75,36 @@ async function persistAll() {
 }
 
 // ── PIN ──
-const PIN_KEY = 'sc_pin';
+const PIN_KEY     = 'sc_pin';
+const SESSION_KEY = 'sc_session';
+const SESSION_DURATIONS = {
+  '0':     0,                   // siempre pedir
+  '4h':    4  * 3600,
+  '24h':   24 * 3600,
+  '7d':    7  * 24 * 3600,
+  'never': Infinity
+};
 let pinBuffer = '', pinMode = 'check', pinSetupFirst = '';
 
 function initPin() {
+  // ¿Hay sesión válida? Si es así, saltear el PIN directamente.
+  const duration = localStorage.getItem('sc_session_duration') || '7d';
+  if (duration !== '0') {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const { unlockedAt } = JSON.parse(raw);
+        const maxSecs = SESSION_DURATIONS[duration];
+        const elapsed = (Date.now() - unlockedAt) / 1000;
+        if (maxSecs === Infinity || elapsed < maxSecs) {
+          document.getElementById('pin-screen').classList.add('hidden');
+          startSync();
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+  // Flujo normal de PIN
   if (!localStorage.getItem(PIN_KEY)) {
     pinMode = 'setup';
     document.getElementById('pin-subtitle').textContent = 'Elegí un PIN de 4 dígitos';
@@ -109,6 +135,7 @@ function updateDots(state) {
 function evalPin() {
   if (pinMode === 'check') {
     if (pinBuffer === localStorage.getItem(PIN_KEY)) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ unlockedAt: Date.now() }));
       document.getElementById('pin-screen').classList.add('hidden');
       startSync();
     } else {
@@ -122,6 +149,7 @@ function evalPin() {
   } else if (pinMode === 'confirm') {
     if (pinBuffer === pinSetupFirst) {
       localStorage.setItem(PIN_KEY, pinBuffer);
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ unlockedAt: Date.now() }));
       document.getElementById('pin-screen').classList.add('hidden');
       startSync();
     } else {
@@ -146,6 +174,7 @@ function clearPinErr() {
 
 window.changePIN = () => {
   localStorage.removeItem(PIN_KEY);
+  localStorage.removeItem(SESSION_KEY); // Invalidar sesión al cambiar PIN
   pinBuffer = ''; pinSetupFirst = ''; pinMode = 'setup';
   document.getElementById('pin-title').textContent = 'Nuevo PIN';
   document.getElementById('pin-subtitle').textContent = 'Elegí un PIN de 4 dígitos';
@@ -435,18 +464,26 @@ document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('cli
 
 // ── SETTINGS ──
 function loadSettingsUI() {
-  document.getElementById('todoist-token').value = settings.todoistToken || '';
-  document.getElementById('todoist-project').value = settings.todoistProject || '';
-  document.getElementById('notion-token').value = settings.notionToken || '';
-  document.getElementById('notion-db').value = settings.notionDb || '';
+  document.getElementById('todoist-token').value   = settings.todoistToken   || '';
+  document.getElementById('todoist-project').value  = settings.todoistProject || '';
+  document.getElementById('notion-token').value     = settings.notionToken    || '';
+  document.getElementById('notion-db').value        = settings.notionDb       || '';
+  document.getElementById('session-duration').value = localStorage.getItem('sc_session_duration') || '7d';
 }
 
 window.saveSettings = async () => {
-  settings.todoistToken = document.getElementById('todoist-token').value.trim();
+  settings.todoistToken   = document.getElementById('todoist-token').value.trim();
   settings.todoistProject = document.getElementById('todoist-project').value.trim();
-  settings.notionToken = document.getElementById('notion-token').value.trim();
-  settings.notionDb = document.getElementById('notion-db').value.trim();
+  settings.notionToken    = document.getElementById('notion-token').value.trim();
+  settings.notionDb       = document.getElementById('notion-db').value.trim();
+  // Sesión: se guarda en localStorage para estar disponible antes de Firebase
+  localStorage.setItem('sc_session_duration', document.getElementById('session-duration').value);
   await persistAll();
+};
+
+window.lockNow = () => {
+  localStorage.removeItem(SESSION_KEY);
+  location.reload();
 };
 
 window.testConnections = async () => {

@@ -125,6 +125,33 @@
         </div>
       </div>
 
+      <!-- Acceso -->
+      <div class="settings-section">
+        <div class="settings-label">Acceso</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon" style="background:rgba(45,212,191,0.15);">🔒</div>
+            <div class="settings-row-content">
+              <div class="settings-row-title">Recordar sesión</div>
+              <div class="settings-row-subtitle">Tiempo que puede usarse la app sin volver a pedir PIN</div>
+              <select class="settings-input" id="session-duration" onchange="saveSettings()" style="cursor:pointer; margin-top:10px;">
+                <option value="0">Siempre pedir PIN</option>
+                <option value="4h">Recordar 4 horas</option>
+                <option value="24h">Recordar 24 horas</option>
+                <option value="7d">Recordar 7 días</option>
+                <option value="never">Recordar indefinidamente</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-row" onclick="lockNow()" style="cursor:pointer">
+            <div class="settings-row-content">
+              <div class="settings-row-title">Bloquear ahora</div>
+              <div class="settings-row-subtitle">Cerrar sesión y pedir PIN al próximo acceso</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Todoist -->
       <div class="settings-section">
         <div class="settings-label">Todoist</div>
