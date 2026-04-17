@@ -249,7 +249,7 @@ window.confirmTodoist = async () => {
     const body = { content: note.text, priority };
     if (due) body.due_string = due;
     if (settings.todoistProject) body.project_id = settings.todoistProject;
-    const r = await fetch(`${TODOIST_PROXY}/rest/v2/tasks`, {
+    const r = await fetch(`${TODOIST_PROXY}/tasks`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${settings.todoistToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -383,7 +383,7 @@ window.testConnections = async () => {
     const st = document.getElementById('todoist-status');
     st.className = 'settings-status'; st.textContent = 'Verificando...'; st.style.display = 'block';
     try {
-      const r = await fetch(`${TODOIST_PROXY}/rest/v2/projects`, { headers: { 'Authorization': `Bearer ${settings.todoistToken}` } });
+      const r = await fetch(`${TODOIST_PROXY}/projects`, { headers: { 'Authorization': `Bearer ${settings.todoistToken}` } });
       st.className = 'settings-status ' + (r.ok ? 'ok' : 'err');
       st.textContent = r.ok ? '✓ Conectado' : '✗ Token inválido';
     } catch {

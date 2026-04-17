@@ -7,7 +7,7 @@
  */
 
 const ALLOWED_ORIGIN = 'https://donatowriter-stack.github.io'; // tu dominio
-const TODOIST_BASE   = 'https://api.todoist.com';
+const TODOIST_BASE = 'https://api.todoist.com/api/v1';
 
 // Headers CORS que se agregan a TODAS las respuestas
 const corsHeaders = {
