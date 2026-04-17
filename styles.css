@@ -319,6 +319,7 @@ html, body {
 .action-btn.restore     { background: rgba(45,212,191,0.12);  border-color: rgba(45,212,191,0.3);   color: #5eead4; }
 .action-btn.delete-perm { background: rgba(255,107,107,0.15); border-color: rgba(255,107,107,0.3);  color: #ff8a80; flex: 0 0 auto; min-width: unset; padding: 8px 12px; }
 .action-btn.edit        { background: rgba(99,102,241,0.1);   border-color: rgba(99,102,241,0.25);  color: #a5b4fc; flex: 0 0 auto; min-width: unset; padding: 8px 12px; }
+.action-btn.dim         { opacity: 0.28; filter: grayscale(1); pointer-events: none; cursor: default; }
 
 /* ── DISMISS CONFIRM ── */
 .dismiss-confirm {
