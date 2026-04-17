@@ -1,19 +1,21 @@
 /**
- * Cloudflare Worker — Proxy para Todoist API
- * Resuelve el bloqueo CORS al llamar a Todoist desde el navegador.
+ * Cloudflare Worker — Proxy CORS para Todoist y Notion
+ * Resuelve el bloqueo CORS al llamar a APIs externas desde el navegador.
  *
  * Deploy: https://dash.cloudflare.com → Workers & Pages → Create Worker
- * Pegá este código, guardá y copiá la URL del worker en app.js (TODOIST_PROXY_URL).
+ * Rutas:
+ *   /todoist/* → https://api.todoist.com/api/v1/*
+ *   /notion/*  → https://api.notion.com/v1/*
  */
 
-const ALLOWED_ORIGIN = 'https://donatowriter-stack.github.io'; // tu dominio
-const TODOIST_BASE = 'https://api.todoist.com/api/v1';
+const ALLOWED_ORIGIN = 'https://donatowriter-stack.github.io';
+const TODOIST_BASE   = 'https://api.todoist.com/api/v1';
+const NOTION_BASE    = 'https://api.notion.com/v1';
 
-// Headers CORS que se agregan a TODAS las respuestas
 const corsHeaders = {
   'Access-Control-Allow-Origin':  ALLOWED_ORIGIN,
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type, Notion-Version',
 };
 
 export default {
@@ -25,26 +27,29 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-    // ── Solo aceptamos rutas /todoist/* ──
-    if (!url.pathname.startsWith('/todoist/')) {
+    let targetUrl;
+
+    if (url.pathname.startsWith('/todoist/')) {
+      const path = url.pathname.replace('/todoist', '');
+      targetUrl = TODOIST_BASE + path + url.search;
+
+    } else if (url.pathname.startsWith('/notion/')) {
+      const path = url.pathname.replace('/notion', '');
+      targetUrl = NOTION_BASE + path + url.search;
+
+    } else {
       return new Response('Not found', { status: 404, headers: corsHeaders });
     }
 
-    // Construimos la URL destino en Todoist
-    const todoistPath = url.pathname.replace('/todoist', '');
-    const todoistUrl  = TODOIST_BASE + todoistPath + url.search;
-
     // Reenviamos la petición tal cual (método, headers, body)
-    const proxyRequest = new Request(todoistUrl, {
+    const proxyRequest = new Request(targetUrl, {
       method:  request.method,
       headers: request.headers,
       body:    request.method !== 'GET' ? request.body : undefined,
     });
 
     try {
-      const response = await fetch(proxyRequest);
-
-      // Clonamos headers y añadimos CORS
+      const response   = await fetch(proxyRequest);
       const newHeaders = new Headers(response.headers);
       Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
 

@@ -1,6 +1,7 @@
 // ── PROXY CONFIG (configurado por el dueño de la app, una sola vez) ──
-// Deployá worker.js en Cloudflare Workers y reemplazá esta URL con la tuya.
+// Deployá worker.js en Cloudflare Workers y reemplazá estas URLs con las tuyas.
 const TODOIST_PROXY = 'https://todoist-proxy.donatowriter.workers.dev/todoist';
+const NOTION_PROXY  = 'https://todoist-proxy.donatowriter.workers.dev/notion';
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -268,6 +269,15 @@ window.confirmTodoist = async () => {
 };
 
 // ── NOTION ──
+// Parsea tanto un ID suelto como una URL completa de Notion
+function parseNotionDbId(input) {
+  // Extraer el ID de 32 hex chars de una URL o string con/sin guiones
+  const match = input.match(/([a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12})/i);
+  if (!match) return input;
+  const raw = match[1].replace(/-/g, '');
+  return raw.replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+}
+
 window.openNotion = id => {
   if (!settings.notionToken || !settings.notionDb) { showToast('⚠️ Configurá Notion', 'error'); switchTab('settings'); return; }
   activeNoteId = id;
@@ -281,11 +291,11 @@ window.confirmNotion = async () => {
   const btn = document.querySelector('#modal-notion .modal-confirm');
   btn.textContent = 'Creando...'; btn.disabled = true;
   try {
-    const dbId = settings.notionDb.replace(/-/g, '').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+    const dbId = parseNotionDbId(settings.notionDb);
     const body = { parent: { database_id: dbId }, properties: { Name: { title: [{ text: { content: note.text.slice(0, 100) } }] } } };
     try { body.properties['Tipo'] = { select: { name: type } }; } catch (e) { }
     if (note.text.length > 100) body.children = [{ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ text: { content: note.text } }] } }];
-    const r = await fetch('https://api.notion.com/v1/pages', {
+    const r = await fetch(`${NOTION_PROXY}/pages`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${settings.notionToken}`, 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' },
       body: JSON.stringify(body)
@@ -394,8 +404,8 @@ window.testConnections = async () => {
     const st = document.getElementById('notion-status');
     st.className = 'settings-status'; st.textContent = 'Verificando...'; st.style.display = 'block';
     try {
-      const dbId = settings.notionDb.replace(/-/g, '').replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
-      const r = await fetch(`https://api.notion.com/v1/databases/${dbId}`, { headers: { 'Authorization': `Bearer ${settings.notionToken}`, 'Notion-Version': '2022-06-28' } });
+      const dbId = parseNotionDbId(settings.notionDb);
+      const r = await fetch(`${NOTION_PROXY}/databases/${dbId}`, { headers: { 'Authorization': `Bearer ${settings.notionToken}`, 'Notion-Version': '2022-06-28' } });
       st.className = 'settings-status ' + (r.ok ? 'ok' : 'err');
       st.textContent = r.ok ? '✓ Base de datos encontrada' : '✗ Verificá token y ID';
     } catch {
