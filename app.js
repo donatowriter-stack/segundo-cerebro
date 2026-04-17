@@ -288,19 +288,48 @@ window.openNotion = id => {
 window.confirmNotion = async () => {
   const note = notes.find(n => n.id === activeNoteId);
   const type = document.getElementById('notion-type').value;
-  const btn = document.querySelector('#modal-notion .modal-confirm');
+  const btn  = document.querySelector('#modal-notion .modal-confirm');
   btn.textContent = 'Creando...'; btn.disabled = true;
   try {
     const dbId = parseNotionDbId(settings.notionDb);
-    const body = { parent: { database_id: dbId }, properties: { Name: { title: [{ text: { content: note.text.slice(0, 100) } }] } } };
-    try { body.properties['Tipo'] = { select: { name: type } }; } catch (e) { }
-    if (note.text.length > 100) body.children = [{ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ text: { content: note.text } }] } }];
+
+    // 1. Obtener el schema de la base de datos para encontrar propiedades reales
+    const schemaRes = await fetch(`${NOTION_PROXY}/databases/${dbId}`, {
+      headers: { 'Authorization': `Bearer ${settings.notionToken}`, 'Notion-Version': '2022-06-28' }
+    });
+    if (!schemaRes.ok) throw new Error('No se pudo leer la base de datos de Notion');
+    const schema = await schemaRes.json();
+
+    // 2. Encontrar la propiedad de tipo 'title' (puede llamarse cualquier cosa)
+    const titleEntry = Object.entries(schema.properties).find(([, v]) => v.type === 'title');
+    if (!titleEntry) throw new Error('La base de datos no tiene una columna de título');
+    const titleKey = titleEntry[0];
+
+    // 3. Armar el cuerpo con el nombre de propiedad correcto
+    const body = {
+      parent: { database_id: dbId },
+      properties: {
+        [titleKey]: { title: [{ text: { content: note.text.slice(0, 100) } }] }
+      }
+    };
+
+    // 4. Agregar 'Tipo' solo si existe en el schema y es un select
+    if (schema.properties['Tipo']?.type === 'select') {
+      body.properties['Tipo'] = { select: { name: type } };
+    }
+
+    // 5. Si el texto supera 100 chars, agregar el resto como bloque
+    if (note.text.length > 100) {
+      body.children = [{ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ text: { content: note.text } }] } }];
+    }
+
     const r = await fetch(`${NOTION_PROXY}/pages`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${settings.notionToken}`, 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' },
       body: JSON.stringify(body)
     });
     if (!r.ok) { const err = await r.json(); throw new Error(err.message || 'Error Notion'); }
+
     addHist(note, 'Notion');
     removeInbox(activeNoteId);
     closeModal('modal-notion');
