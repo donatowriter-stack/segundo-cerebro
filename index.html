@@ -222,19 +222,34 @@
         <button class="btn-primary" onclick="testConnections()">Verificar conexiones</button>
       </div>
 
-      <!-- Export -->
+      <!-- Backup -->
       <div class="settings-section">
-        <div class="settings-label">Exportar</div>
+        <div class="settings-label">Copia de seguridad</div>
         <div class="settings-card">
+          <div class="settings-row" onclick="backupJSON()" style="cursor:pointer">
+            <div class="settings-row-icon" style="background:rgba(45,212,191,0.15);">💾</div>
+            <div class="settings-row-content">
+              <div class="settings-row-title">Guardar backup</div>
+              <div class="settings-row-subtitle">Descarga un .json con todas tus notas y configuración</div>
+            </div>
+          </div>
+          <div class="settings-row" onclick="importJSON()" style="cursor:pointer">
+            <div class="settings-row-icon" style="background:rgba(99,102,241,0.15);">📂</div>
+            <div class="settings-row-content">
+              <div class="settings-row-title">Restaurar backup</div>
+              <div class="settings-row-subtitle">Carga un archivo .json de backup anterior</div>
+            </div>
+          </div>
           <div class="settings-row" onclick="exportXLSX()" style="cursor:pointer">
             <div class="settings-row-icon" style="background:rgba(52,211,153,0.2);">📊</div>
             <div class="settings-row-content">
-              <div class="settings-row-title">Descargar .xlsx</div>
-              <div class="settings-row-subtitle">Exporta inbox, historial y papelera a Excel</div>
+              <div class="settings-row-title">Exportar a Excel</div>
+              <div class="settings-row-subtitle">Descarga inbox, historial y papelera en .xlsx</div>
             </div>
           </div>
         </div>
       </div>
+      <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImport(event)">
 
       <!-- Danger Zone -->
       <div class="settings-section">
@@ -359,6 +374,27 @@
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-notion')">Cancelar</button>
       <button class="modal-confirm" onclick="confirmNotion()">Crear página</button>
+    </div>
+  </div>
+</div>
+
+<!-- Backup Modal -->
+<div class="modal-overlay" id="modal-backup">
+  <div class="modal-sheet">
+    <div style="text-align:center; padding: 8px 0 20px;">
+      <div style="font-size:40px; margin-bottom:12px;">✅</div>
+      <div class="modal-title" style="text-align:center">Backup descargado</div>
+      <p style="font-size:14px; color:var(--text-muted); line-height:1.6; margin-top:6px;">
+        El archivo <strong style="color:var(--text)">segundo-cerebro-backup.json</strong> está en tu carpeta de descargas.<br>
+        Podés subirlo a Google Drive para guardarlo en la nube.
+      </p>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('modal-backup')">Listo</button>
+      <button class="modal-confirm" onclick="openGoogleDrive()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 87.3 78" fill="currentColor"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.55C.4 49.95 0 51.5 0 53.05h27.5z" fill="#00ac47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 11.85z" fill="#ea4335"/><path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="M59.8 53.05H27.5L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28.05H87.3c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+        Abrir Google Drive
+      </button>
     </div>
   </div>
 </div>

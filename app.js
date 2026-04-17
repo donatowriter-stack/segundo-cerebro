@@ -595,6 +595,68 @@ window.emptyTrash = async () => {
 };
 
 // ── EXPORT ──
+// ── BACKUP / RESTORE ──
+window.backupJSON = () => {
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    device: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop',
+    notes,
+    history,
+    trash,
+    settings
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `segundo-cerebro-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById('modal-backup').classList.add('show');
+};
+
+window.openGoogleDrive = () => {
+  window.open('https://drive.google.com/drive/my-drive', '_blank');
+  document.getElementById('modal-backup').classList.remove('show');
+};
+
+window.importJSON = () => {
+  document.getElementById('import-file-input').click();
+};
+
+window.handleImport = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.notes)) throw new Error('Archivo de backup inválido');
+      const date = data.exportedAt
+        ? new Date(data.exportedAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })
+        : 'fecha desconocida';
+      if (!confirm(`¿Restaurar backup del ${date}?\n\n• ${data.notes.length} notas en inbox\n• ${(data.history||[]).length} en historial\n• ${(data.trash||[]).length} en papelera\n\nEsto reemplazará los datos actuales.`)) return;
+      notes   = data.notes   || [];
+      history = data.history || [];
+      trash   = data.trash   || [];
+      if (data.settings && typeof data.settings === 'object') {
+        settings = data.settings;
+        loadSettingsUI();
+      }
+      saveLocal();
+      renderReview(); renderHistory(); renderTrash(); updateBadge();
+      await persistAll();
+      showToast('✓ Backup restaurado correctamente', 'success');
+    } catch (err) {
+      showToast('Error al leer el backup: ' + err.message, 'error');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+};
+
 window.exportXLSX = () => {
   const s = document.createElement('script');
   s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
