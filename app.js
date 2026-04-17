@@ -93,6 +93,7 @@ function startSync() {
     const offlineNotes = notes.filter(n => !remoteIds.has(n.id));
 
     applyRemoteData(d);
+    saveLocal(); // ← Actualizar caché local con los últimos datos de Firebase
     renderReview(); renderHistory(); renderTrash(); updateBadge();
 
     // Si había notas offline, fusionarlas y subir a Firebase
