@@ -577,3 +577,11 @@ function fmt(iso) {
 function esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '<br>');
 }
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/segundo-cerebro/sw.js')
+      .catch(err => console.warn('SW no registrado:', err));
+  });
+}
