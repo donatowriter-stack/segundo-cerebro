@@ -126,11 +126,15 @@ html, body {
 /* ── SYNC DOT ── */
 .sync-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--accent3); display: inline-block;
-  margin-left: 6px; transition: background .3s;
+  background: #f59e0b; /* naranja por defecto = conectando */
+  display: inline-block;
+  margin-left: 6px; transition: background .4s;
 }
-.sync-dot.syncing { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
-.sync-dot.error   { background: var(--danger); animation: none; }
+.sync-dot.connecting { background: #f59e0b; animation: pulse 1.4s ease-in-out infinite; }
+.sync-dot.connected  { background: var(--accent3); animation: none; }
+.sync-dot.offline    { background: #f59e0b; animation: none; }
+.sync-dot.error      { background: var(--danger); animation: none; }
+.sync-dot.syncing    { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 
 /* ── APP LAYOUT ── */
@@ -390,8 +394,10 @@ html, body {
 }
 .btn-primary:active { transform: scale(0.98); }
 
+.btn-center { display: flex; justify-content: center; }
+
 @media (min-width: 600px) {
-  .btn-primary { width: auto; padding-left: 32px; padding-right: 32px; }
+  .btn-primary { width: auto; padding-left: 40px; padding-right: 40px; }
 }
 
 /* ── MODALS ── */
@@ -463,4 +469,35 @@ html, body {
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 500; color: #fcd34d;
   gap: 8px; letter-spacing: 0.1px;
+}
+
+/* ── DESKTOP LAYOUT ── */
+@media (min-width: 700px) {
+
+  /* Márgenes exteriores armónicos para todas las secciones */
+  .scroll-list {
+    padding: 16px 32px 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Dos columnas en Revisar */
+  #review-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+    gap: 16px;
+  }
+  #review-list .empty-state { grid-column: 1 / -1; }
+
+  /* Ajustes: ancho acorde al contenido */
+  .settings-body {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px 32px 32px;
+    width: 100%;
+    box-sizing: border-box;
+  }
 }

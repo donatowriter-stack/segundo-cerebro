@@ -51,8 +51,16 @@ function loadLocal() {
   } catch(e) { return false; }
 }
 
-// ── SYNC ──
+// ── SYNC DOT ──
+function setSyncDot(state) {
+  // state: 'connecting' | 'connected' | 'offline'
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + state;
+}
+
 function showSyncStatus(ok) {
+  setSyncDot(ok ? 'connected' : 'connecting');
   const el = document.getElementById('sync-indicator');
   if (!el) return;
   el.textContent = ok ? '⇕ Sincronizado' : '⚠ Error de sync';
@@ -63,9 +71,9 @@ function showSyncStatus(ok) {
 }
 
 function showOfflineBanner(offline) {
-  let banner = document.getElementById('offline-banner');
-  if (!banner) return;
-  banner.style.display = offline ? 'flex' : 'none';
+  setSyncDot(offline ? 'offline' : 'connected');
+  const banner = document.getElementById('offline-banner');
+  if (banner) banner.style.display = offline ? 'flex' : 'none';
 }
 
 function applyRemoteData(d) {
@@ -653,3 +661,35 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.warn('SW no registrado:', err));
   });
 }
+
+// ── INSTALL HINT ──
+const HINT_KEY = 'sc_hint_shown';
+
+function initInstallHint() {
+  // No mostrar si ya está instalada como PWA
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if (isStandalone) return;
+
+  // No mostrar en dispositivos móviles (que no vienen del web)
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) return;
+
+  // Mostrar una vez por mes en escritorio
+  const last = localStorage.getItem(HINT_KEY);
+  const ONE_MONTH = 30 * 24 * 3600 * 1000;
+  if (last && Date.now() - Number(last) < ONE_MONTH) return;
+
+  const hint = document.getElementById('install-hint');
+  if (hint) hint.style.display = 'flex';
+}
+
+window.dismissInstallHint = () => {
+  localStorage.setItem(HINT_KEY, Date.now().toString());
+  const hint = document.getElementById('install-hint');
+  if (hint) hint.style.display = 'none';
+};
+
+// Dot empieza en "connecting" (naranja) hasta que Firebase confirme
+setSyncDot('connecting');
+initInstallHint();
