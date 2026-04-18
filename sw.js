@@ -1,7 +1,7 @@
 // Service Worker — Segundo Cerebro
 // Cache básico para que la app cargue más rápido y pase la auditoría PWA
 
-const CACHE = 'sc-v1';
+const CACHE = 'sc-v2';
 const ASSETS = [
   '/segundo-cerebro/',
   '/segundo-cerebro/index.html',
