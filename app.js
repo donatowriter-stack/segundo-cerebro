@@ -467,9 +467,9 @@ window.trashNote = async id => {
   const note = notes.find(n => n.id === id);
   if (note) trash.unshift({ ...note, deletedAt: new Date().toISOString() });
   const c = document.getElementById('card-' + id);
-  if (c) { c.classList.add('removing'); setTimeout(() => removeInbox(id), 380); }
-  else removeInbox(id);
-  await persistAll();
+  const go = async () => { removeInbox(id); await persistAll(); };
+  if (c) { c.classList.add('removing'); setTimeout(go, 380); }
+  else await go();
 };
 
 // ── TRASH ──
