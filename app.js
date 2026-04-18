@@ -98,7 +98,12 @@ function startSync() {
     // Detectar notas añadidas offline que no están en Firebase
     const parse = v => Array.isArray(v) ? v : (typeof v === 'string' ? JSON.parse(v) : []);
     const remoteIds = new Set(parse(d.notes).map(n => n.id));
-    const offlineNotes = notes.filter(n => !remoteIds.has(n.id));
+    // Excluir notas que ya fueron eliminadas o enviadas en otra sesión/dispositivo
+    const remoteRemovedIds = new Set([
+      ...parse(d.trash).map(n => n.id),
+      ...parse(d.history).map(n => n.id),
+    ]);
+    const offlineNotes = notes.filter(n => !remoteIds.has(n.id) && !remoteRemovedIds.has(n.id));
 
     applyRemoteData(d);
     saveLocal(); // ← Actualizar caché local con los últimos datos de Firebase
